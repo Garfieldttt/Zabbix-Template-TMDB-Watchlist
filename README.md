@@ -145,3 +145,4 @@ The watchlist endpoints only return page 1 (up to 20 entries). Entries beyond 20
 | Movie: digital release soon | Info | digital release within `{$TMDB.DIGITAL.SOON_DAYS}` days |
 | Movie watchlist >20 entries | Warning | page 2+ exists, entries not monitored |
 | No data received | Warning | no data from TMDB API for 2 hours |
+<img width="2842" height="1422" alt="image" src="https://github.com/user-attachments/assets/51262deb-b977-4701-9db9-7b4f0c2c8ef9" />
