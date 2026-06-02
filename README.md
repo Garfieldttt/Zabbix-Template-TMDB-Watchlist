@@ -25,7 +25,13 @@ The session ID authenticates watchlist requests. It does not expire unless manua
 curl -s "https://api.themoviedb.org/3/authentication/token/new?api_key=YOUR_API_KEY"
 ```
 
-Note the `request_token` value from the response.
+Expected response:
+
+```json
+{"success":true,"expires_at":"2026-01-01 12:00:00 UTC","request_token":"abc123..."}
+```
+
+Copy the `request_token` value.
 
 **Step 2:** Open this URL in a browser and log in with your TMDB account to approve the token:
 
@@ -33,7 +39,7 @@ Note the `request_token` value from the response.
 https://www.themoviedb.org/authenticate/YOUR_REQUEST_TOKEN
 ```
 
-Replace `YOUR_REQUEST_TOKEN` with the value from Step 1. This step is required before Step 3 will work.
+Replace `YOUR_REQUEST_TOKEN` with the value from Step 1. TMDB will confirm the approval on screen. Step 3 will fail with `Session denied` if this step is skipped.
 
 **Step 3:** Exchange the approved token for a session ID:
 
@@ -43,7 +49,15 @@ curl -s -X POST "https://api.themoviedb.org/3/authentication/session/new?api_key
   -d '{"request_token":"YOUR_REQUEST_TOKEN"}'
 ```
 
-Replace `YOUR_REQUEST_TOKEN` again with the value from Step 1. Note the `session_id` from the response.
+Replace `YOUR_REQUEST_TOKEN` with the value from Step 1.
+
+Expected response:
+
+```json
+{"success":true,"session_id":"abc123def456..."}
+```
+
+Copy the `session_id` value.
 
 ### 3. Get Account ID
 
