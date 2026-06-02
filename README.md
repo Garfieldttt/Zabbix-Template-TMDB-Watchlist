@@ -55,40 +55,6 @@ The response starts with `"id"`:
 
 Use the numeric `id` value as `{$TMDB.ACCOUNT_ID}`.
 
-## Verifying the Setup
-
-After obtaining all three credentials, use these curl commands to verify each API call the template makes.
-
-**Series watchlist** (up to 20 entries, used for LLD discovery):
-
-```bash
-curl -s "https://api.themoviedb.org/3/account/YOUR_ACCOUNT_ID/watchlist/tv?api_key=YOUR_API_KEY&session_id=YOUR_SESSION_ID&page=1" \
-  | python3 -m json.tool | grep -E '"name"|"id"|"total_results"'
-```
-
-**Movie watchlist** (up to 20 entries, used for LLD discovery):
-
-```bash
-curl -s "https://api.themoviedb.org/3/account/YOUR_ACCOUNT_ID/watchlist/movies?api_key=YOUR_API_KEY&session_id=YOUR_SESSION_ID&page=1" \
-  | python3 -m json.tool | grep -E '"title"|"id"|"total_results"'
-```
-
-**Series details** (fetched per discovered series, replace ID with a real series ID from the watchlist):
-
-```bash
-curl -s "https://api.themoviedb.org/3/tv/SERIES_ID?api_key=YOUR_API_KEY&language=de-DE" \
-  | python3 -m json.tool | grep -E '"name"|"number_of_seasons"|"status"|"in_production"|"last_air_date"|"next_episode_to_air"'
-```
-
-**Movie details** (fetched per discovered movie, replace ID with a real movie ID from the watchlist):
-
-```bash
-curl -s "https://api.themoviedb.org/3/movie/MOVIE_ID?api_key=YOUR_API_KEY&language=de-DE&append_to_response=release_dates" \
-  | python3 -m json.tool | grep -E '"title"|"release_date"|"status"'
-```
-
-For physical and digital release dates, look inside `release_dates.results` for your country code and type 4 (digital) or type 5 (physical).
-
 ## Zabbix Macros
 
 | Macro | Default | Description |
