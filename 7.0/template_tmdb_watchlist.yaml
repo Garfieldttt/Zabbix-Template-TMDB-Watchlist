@@ -7,7 +7,7 @@ zabbix_export:
     - uuid: 593ca72fa8b643ab85b55e9dd4d2ec8a
       template: 'TMDB Watchlist by HTTP'
       name: 'TMDB Watchlist by HTTP'
-      description: 'Monitors TV series watchlist via TMDB API v3. Discovers series, tracks season count and next episode air date.'
+      description: 'Monitors TV series and movies from a TMDB watchlist via API v3. Discovers entries via LLD and tracks season count, episode count, next/last episode air date, release dates, production status, runtime and physical/digital releases. Author: Thomas Rzen. https://github.com/Garfieldttt/Zabbix-Template-TMDB-Watchlist'
       groups:
         - name: Templates/Applications
       items:
