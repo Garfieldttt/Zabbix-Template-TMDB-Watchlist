@@ -111,38 +111,46 @@ The watchlist endpoints only return page 1 (up to 20 entries). Entries beyond 20
 
 **Series (per discovered entry):**
 - Season count
-- Next episode air date
+- Episode count (total across all seasons)
+- Next episode air date (season and episode number)
+- Last episode air date (season and episode number)
 - Production status (in_production flag)
 - Series status (Returning Series, Ended, Canceled, etc.)
 - Days since last episode (stale detection)
+- Vote average (informational)
 
 **Movies (per discovered entry):**
 - Theatrical release date and days until release
 - Movie status (Released, In Production, Planned, etc.)
 - Production status (derived from status field)
+- Runtime in minutes
 - Physical release date (DVD/Blu-ray, release type 5) for country `{$TMDB.COUNTRY}`
 - Digital release date (streaming/download, release type 4) for country `{$TMDB.COUNTRY}`
+- Vote average (informational)
 
 ## Triggers
 
 | Trigger | Severity | Condition |
 |---------|----------|-----------|
 | Series: new season announced | Info | season count increased by at least `{$TMDB.SEASON.NEW_TRIGGER}` |
+| Series: new episode added | Info | episode count increased (TMDB entry added, may precede air date) |
+| Series: new episode aired | Info | last_air_date changed; event name shows S__E__ and date |
 | Series: next episode date changed | Info | next_episode_to_air date set or updated |
 | Series: production started | Info | in_production changed to true |
-| Series: ended | Info | status changed to Ended |
-| Series: cancelled | Warning | status = Canceled |
+| Series: ended | Warning | status changed to Ended |
+| Series: cancelled | Warning | status changed to Canceled |
 | Series: stale | Warning | days since last episode > `{$TMDB.SERIES.STALE_DAYS}` and in_production = 1 |
 | Series watchlist >20 entries | Warning | page 2+ exists, entries not monitored |
 | Movie: release date announced | Info | release_date set or changed |
-| Movie: releases soon | Info | release within `{$TMDB.MOVIE.SOON_DAYS}` days |
+| Movie: releases soon | Warning | release within `{$TMDB.MOVIE.SOON_DAYS}` days |
 | Movie: released | Info | status changed to Released |
 | Movie: production started | Info | status changed to In Production or Post Production |
-| Movie: cancelled | Warning | status = Canceled |
+| Movie: runtime set | Info | runtime changed from 0 to a valid value |
+| Movie: cancelled | Warning | status changed to Canceled |
 | Movie: physical release announced | Info | physical release date set or changed |
-| Movie: physical release soon | Info | physical release within `{$TMDB.PHYSICAL.SOON_DAYS}` days |
+| Movie: physical release soon | Warning | physical release within `{$TMDB.PHYSICAL.SOON_DAYS}` days |
 | Movie: digital release announced | Info | digital release date set or changed |
-| Movie: digital release soon | Info | digital release within `{$TMDB.DIGITAL.SOON_DAYS}` days |
+| Movie: digital release soon | Warning | digital release within `{$TMDB.DIGITAL.SOON_DAYS}` days |
 | Movie watchlist >20 entries | Warning | page 2+ exists, entries not monitored |
 | No data received | Warning | no data from TMDB API for 2 hours |
 <img width="2842" height="1422" alt="image" src="https://github.com/user-attachments/assets/51262deb-b977-4701-9db9-7b4f0c2c8ef9" />
