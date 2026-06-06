@@ -56,13 +56,6 @@ zabbix_export:
           tags:
             - tag: component
               value: tmdb
-          triggers:
-            - uuid: ec485407f6f6405a8ab796ac546acafa
-              expression: 'last(/TMDB Watchlist by HTTP/tmdb.watchlist.movies.pages)>1'
-              name: 'TMDB: Movie watchlist has more than 20 entries (page 2+ not monitored)'
-              priority: WARNING
-              description: 'The movie watchlist exceeds 20 entries. Only page 1 is fetched; movies on page 2 and beyond will not be discovered or monitored.'
-              manual_close: 'YES'
         - uuid: de13acba43e34277b493bab6d7c199c3
           name: 'TMDB: Watchlist movies raw'
           type: HTTP_AGENT
@@ -113,13 +106,6 @@ zabbix_export:
           tags:
             - tag: component
               value: tmdb
-          triggers:
-            - uuid: b7372ebaeef54abb9a553f4a215ee63d
-              expression: 'last(/TMDB Watchlist by HTTP/tmdb.watchlist.series.pages)>1'
-              name: 'TMDB: Series watchlist has more than 20 entries (page 2+ not monitored)'
-              priority: WARNING
-              description: 'The series watchlist exceeds 20 entries. Only page 1 is fetched; series on page 2 and beyond will not be discovered or monitored.'
-              manual_close: 'YES'
       discovery_rules:
         - uuid: df494a411e0240e9a37a2acbd863915e
           name: 'TMDB: Watchlist series discovery'
@@ -593,15 +579,6 @@ zabbix_export:
                   value: tmdb
                 - tag: movie
                   value: '{#MOVIE_NAME}'
-              trigger_prototypes:
-                - uuid: be8b15f83dc0448e913ff326cfbfaeba
-                  expression: 'last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_physical_release[{#MOVIE_ID}])>=0 and last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_physical_release[{#MOVIE_ID}])<={$TMDB.PHYSICAL.SOON_DAYS}'
-                  name: 'TMDB: {#MOVIE_NAME} physical release in {$TMDB.PHYSICAL.SOON_DAYS} days or less'
-                  event_name: 'TMDB: {#MOVIE_NAME} physical release in {ITEM.LASTVALUE1} days'
-                  opdata: '{ITEM.LASTVALUE1} days'
-                  priority: WARNING
-                  description: 'The physical release date (DVD/Blu-ray) is within {$TMDB.PHYSICAL.SOON_DAYS} days. Resolves automatically once the release date has passed.'
-                  manual_close: 'YES'
             - uuid: 834c3e4410064447ae2a0ae020499a62
               name: 'TMDB: {#MOVIE_NAME} days until release'
               type: DEPENDENT
@@ -937,9 +914,6 @@ zabbix_export:
         - macro: '{$TMDB.MOVIE.SOON_DAYS}'
           value: '7'
           description: 'Days before release date to trigger "releases soon" alert'
-        - macro: '{$TMDB.PHYSICAL.SOON_DAYS}'
-          value: '14'
-          description: 'Days before physical release (DVD/Blu-ray) to trigger alert'
         - macro: '{$TMDB.SEASON.NEW_TRIGGER}'
           value: '1'
           description: 'Minimum increase in season count to trigger alert'
