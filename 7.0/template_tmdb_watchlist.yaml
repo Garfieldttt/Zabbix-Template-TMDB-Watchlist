@@ -206,7 +206,6 @@ zabbix_export:
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}])>0'
                   name: 'TMDB: {#SERIES_NAME} new episode aired'
                   event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_number[{#SERIES_ID}])} aired on {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}]))}'
-                  opdata: 'S{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_number[{#SERIES_ID}])}: {ITEM.LASTVALUE1}'
                   priority: INFO
                   description: 'A new episode has aired. The last_air_date has changed to a newer value.'
                   manual_close: 'YES'
@@ -247,7 +246,6 @@ zabbix_export:
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}])>0'
                   name: 'TMDB: {#SERIES_NAME} next episode date changed'
                   event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])} on {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}]))}'
-                  opdata: 'S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])}: {ITEM.LASTVALUE1}'
                   priority: INFO
                   description: 'The next episode air date has been set or updated. Fires only when the new value is a valid date (not 0).'
                   manual_close: 'YES'
@@ -368,32 +366,12 @@ zabbix_export:
                 - uuid: 47438ad60b0b480092eb42489958174b
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.episode_count[{#SERIES_ID}])>=1'
                   name: 'TMDB: {#SERIES_NAME} new episode added'
-                  event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])} added – airs: {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}]))}'
+                  event_name: 'TMDB: {#SERIES_NAME} – {ITEM.LASTVALUE1} episodes total'
                   opdata: '{ITEM.LASTVALUE1} episodes total'
                   priority: INFO
                   description: 'The total episode count has increased. A new episode has been added to TMDB.'
                   manual_close: 'YES'
-            - uuid: 410edaa153544650ac49ad8556b9134b
-              name: 'TMDB: {#SERIES_NAME} vote average'
-              type: DEPENDENT
-              key: 'tmdb.series.vote_average[{#SERIES_ID}]'
-              delay: '0'
-              value_type: FLOAT
-              description: 'Current TMDB user rating (0-10). Informational only, no trigger.'
-              preprocessing:
-                - type: JSONPATH
-                  parameters:
-                    - $.body.vote_average
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1d
-              master_item:
-                key: 'tmdb.series.raw[{#SERIES_ID}]'
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: series
-                  value: '{#SERIES_NAME}'
+
             - uuid: 6c253cddf4b1409396e711926d6c2ee0
               name: 'TMDB: {#SERIES_NAME} raw'
               type: HTTP_AGENT
@@ -434,7 +412,7 @@ zabbix_export:
                 - uuid: 92b458cf6e1d40bea73113cedb3fba14
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.seasons[{#SERIES_ID}])>={$TMDB.SEASON.NEW_TRIGGER}'
                   name: 'TMDB: {#SERIES_NAME} new season announced'
-                  event_name: 'TMDB: {#SERIES_NAME} season count: {ITEM.LASTVALUE1} – next episode: {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}]))}'
+                  event_name: 'TMDB: {#SERIES_NAME} – {ITEM.LASTVALUE1} seasons'
                   opdata: '{ITEM.LASTVALUE1} seasons'
                   priority: INFO
                   description: 'The season count for this series has increased by at least {$TMDB.SEASON.NEW_TRIGGER}. A new season has been announced on TMDB.'
@@ -771,27 +749,7 @@ zabbix_export:
                   priority: INFO
                   description: 'The movie runtime has been set or changed on TMDB.'
                   manual_close: 'YES'
-            - uuid: d22b76b14a914d318a711c5e8a5ae1c4
-              name: 'TMDB: {#MOVIE_NAME} vote average'
-              type: DEPENDENT
-              key: 'tmdb.movie.vote_average[{#MOVIE_ID}]'
-              delay: '0'
-              value_type: FLOAT
-              description: 'Current TMDB user rating (0-10). Informational only, no trigger.'
-              preprocessing:
-                - type: JSONPATH
-                  parameters:
-                    - $.body.vote_average
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1d
-              master_item:
-                key: 'tmdb.movie.raw[{#MOVIE_ID}]'
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: movie
-                  value: '{#MOVIE_NAME}'
+
             - uuid: fddfaf3debdb4dd2af2065a5e4c40a26
               name: 'TMDB: {#MOVIE_NAME} raw'
               type: HTTP_AGENT
