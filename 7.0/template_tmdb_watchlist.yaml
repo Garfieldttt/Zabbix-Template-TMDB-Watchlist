@@ -1,5 +1,8 @@
 zabbix_export:
   version: '7.0'
+  template_groups:
+    - uuid: 54c874c18a874ba0a8b48fc694616da4
+      name: Templates/Applications
   templates:
     - uuid: 593ca72fa8b643ab85b55e9dd4d2ec8a
       template: 'TMDB Watchlist by HTTP'
@@ -135,6 +138,36 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
+            - uuid: 5735608341eb442795f9a05909cbd5c1
+              name: 'TMDB: {#SERIES_NAME} episode count'
+              type: DEPENDENT
+              key: 'tmdb.series.episode_count[{#SERIES_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'Total number of episodes across all seasons. Increases when a new episode is added to TMDB (often before it airs).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.body.number_of_episodes
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'tmdb.series.raw[{#SERIES_ID}]'
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: series
+                  value: '{#SERIES_NAME}'
+              trigger_prototypes:
+                - uuid: 47438ad60b0b480092eb42489958174b
+                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.episode_count[{#SERIES_ID}])>=1'
+                  name: 'TMDB: {#SERIES_NAME} new episode added'
+                  event_name: 'TMDB: {#SERIES_NAME} – {ITEM.LASTVALUE1} episodes total'
+                  opdata: '{ITEM.LASTVALUE1} episodes total'
+                  priority: WARNING
+                  description: 'The total episode count has increased. A new episode has been added to TMDB.'
+                  manual_close: 'YES'
             - uuid: 56a3221c6d6d4939ade8923286eabe40
               name: 'TMDB: {#SERIES_NAME} in production'
               type: DEPENDENT
@@ -176,9 +209,9 @@ zabbix_export:
               delay: '0'
               value_type: FLOAT
               units: unixtime
+              description: 'Date of the most recently aired episode as a Unix timestamp. Returns 0 if no episode has aired yet. Used to detect series that are in production but have not aired in a long time.'
               valuemap:
                 name: 'TMDB Timestamp'
-              description: 'Date of the most recently aired episode as a Unix timestamp. Returns 0 if no episode has aired yet. Used to detect series that are in production but have not aired in a long time.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -206,9 +239,56 @@ zabbix_export:
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}])>0'
                   name: 'TMDB: {#SERIES_NAME} new episode aired'
                   event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_number[{#SERIES_ID}])} aired on {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}]))}'
+                  opdata: 'S{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_number[{#SERIES_ID}])}: {ITEM.LASTVALUE1}'
                   priority: INFO
                   description: 'A new episode has aired. The last_air_date has changed to a newer value.'
                   manual_close: 'YES'
+            - uuid: 2d75de92d1a8452ebe179d2d0c78acc3
+              name: 'TMDB: {#SERIES_NAME} last episode number'
+              type: DEPENDENT
+              key: 'tmdb.series.last_episode_number[{#SERIES_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'Episode number of the most recently aired episode within its season. Returns 0 if no episode has aired. Used in trigger event names to show S__E__ notation.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.body.last_episode_to_air.episode_number
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'tmdb.series.raw[{#SERIES_ID}]'
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: series
+                  value: '{#SERIES_NAME}'
+            - uuid: 39a0088d6b1149b2886a72738d95ad81
+              name: 'TMDB: {#SERIES_NAME} last episode season'
+              type: DEPENDENT
+              key: 'tmdb.series.last_episode_season[{#SERIES_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'Season number of the most recently aired episode. Returns 0 if no episode has aired. Used in trigger event names to show S__E__ notation.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.body.last_episode_to_air.season_number
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'tmdb.series.raw[{#SERIES_ID}]'
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: series
+                  value: '{#SERIES_NAME}'
             - uuid: bbabc15acc5749758368b0cc12061bc8
               name: 'TMDB: {#SERIES_NAME} next episode air date'
               type: DEPENDENT
@@ -216,9 +296,9 @@ zabbix_export:
               delay: '0'
               value_type: FLOAT
               units: unixtime
+              description: 'Air date of the next scheduled episode as a Unix timestamp. Returns 0 if no next episode is announced (displays as 1970-01-01 in Zabbix, use the trigger to detect date changes instead of watching the raw value).'
               valuemap:
                 name: 'TMDB Timestamp'
-              description: 'Air date of the next scheduled episode as a Unix timestamp. Returns 0 if no next episode is announced (displays as 1970-01-01 in Zabbix, use the trigger to detect date changes instead of watching the raw value).'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -246,6 +326,7 @@ zabbix_export:
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}])>0'
                   name: 'TMDB: {#SERIES_NAME} next episode date changed'
                   event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])} on {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}]))}'
+                  opdata: 'S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])}: {ITEM.LASTVALUE1}'
                   priority: INFO
                   description: 'The next episode air date has been set or updated. Fires only when the new value is a valid date (not 0).'
                   manual_close: 'YES'
@@ -295,83 +376,6 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
-            - uuid: 39a0088d6b1149b2886a72738d95ad81
-              name: 'TMDB: {#SERIES_NAME} last episode season'
-              type: DEPENDENT
-              key: 'tmdb.series.last_episode_season[{#SERIES_ID}]'
-              delay: '0'
-              value_type: FLOAT
-              description: 'Season number of the most recently aired episode. Returns 0 if no episode has aired. Used in trigger event names to show S__E__ notation.'
-              preprocessing:
-                - type: JSONPATH
-                  parameters:
-                    - $.body.last_episode_to_air.season_number
-                  error_handler: CUSTOM_VALUE
-                  error_handler_params: '0'
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1d
-              master_item:
-                key: 'tmdb.series.raw[{#SERIES_ID}]'
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: series
-                  value: '{#SERIES_NAME}'
-            - uuid: 2d75de92d1a8452ebe179d2d0c78acc3
-              name: 'TMDB: {#SERIES_NAME} last episode number'
-              type: DEPENDENT
-              key: 'tmdb.series.last_episode_number[{#SERIES_ID}]'
-              delay: '0'
-              value_type: FLOAT
-              description: 'Episode number of the most recently aired episode within its season. Returns 0 if no episode has aired. Used in trigger event names to show S__E__ notation.'
-              preprocessing:
-                - type: JSONPATH
-                  parameters:
-                    - $.body.last_episode_to_air.episode_number
-                  error_handler: CUSTOM_VALUE
-                  error_handler_params: '0'
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1d
-              master_item:
-                key: 'tmdb.series.raw[{#SERIES_ID}]'
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: series
-                  value: '{#SERIES_NAME}'
-            - uuid: 5735608341eb442795f9a05909cbd5c1
-              name: 'TMDB: {#SERIES_NAME} episode count'
-              type: DEPENDENT
-              key: 'tmdb.series.episode_count[{#SERIES_ID}]'
-              delay: '0'
-              value_type: FLOAT
-              description: 'Total number of episodes across all seasons. Increases when a new episode is added to TMDB (often before it airs).'
-              preprocessing:
-                - type: JSONPATH
-                  parameters:
-                    - $.body.number_of_episodes
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1d
-              master_item:
-                key: 'tmdb.series.raw[{#SERIES_ID}]'
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: series
-                  value: '{#SERIES_NAME}'
-              trigger_prototypes:
-                - uuid: 47438ad60b0b480092eb42489958174b
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.episode_count[{#SERIES_ID}])>=1'
-                  name: 'TMDB: {#SERIES_NAME} new episode added'
-                  event_name: 'TMDB: {#SERIES_NAME} – {ITEM.LASTVALUE1} episodes total'
-                  opdata: '{ITEM.LASTVALUE1} episodes total'
-                  priority: INFO
-                  description: 'The total episode count has increased. A new episode has been added to TMDB.'
-                  manual_close: 'YES'
-
             - uuid: 6c253cddf4b1409396e711926d6c2ee0
               name: 'TMDB: {#SERIES_NAME} raw'
               type: HTTP_AGENT
@@ -454,6 +458,27 @@ zabbix_export:
                   priority: WARNING
                   description: 'The series status on TMDB has changed to Ended.'
                   manual_close: 'YES'
+            - uuid: 410edaa153544650ac49ad8556b9134b
+              name: 'TMDB: {#SERIES_NAME} vote average'
+              type: DEPENDENT
+              key: 'tmdb.series.vote_average[{#SERIES_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'Current TMDB user rating (0-10). Informational only, no trigger.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.body.vote_average
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'tmdb.series.raw[{#SERIES_ID}]'
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: series
+                  value: '{#SERIES_NAME}'
           trigger_prototypes:
             - uuid: 24b1a6c99e75424499b765034002a9df
               expression: 'last(/TMDB Watchlist by HTTP/tmdb.series.days_since_last_air[{#SERIES_ID}])>{$TMDB.SERIES.STALE_DAYS} and last(/TMDB Watchlist by HTTP/tmdb.series.in_production[{#SERIES_ID}])=1'
@@ -592,7 +617,7 @@ zabbix_export:
                   name: 'TMDB: {#MOVIE_NAME} releases in {$TMDB.MOVIE.SOON_DAYS} days or less'
                   event_name: 'TMDB: {#MOVIE_NAME} releases in {ITEM.LASTVALUE1} days'
                   opdata: '{ITEM.LASTVALUE1} days'
-                  priority: AVERAGE
+                  priority: WARNING
                   description: 'The movie release date is within {$TMDB.MOVIE.SOON_DAYS} days. Resolves automatically once the release date has passed.'
                   manual_close: 'YES'
             - uuid: e9b816a7d70043acb8b0daafcd95d43c
@@ -602,9 +627,9 @@ zabbix_export:
               delay: '0'
               value_type: FLOAT
               units: unixtime
+              description: 'Digital release date (streaming/download, type 4) for country {$TMDB.COUNTRY} as a Unix timestamp. Returns 0 if no digital release date is listed on TMDB for the configured country.'
               valuemap:
                 name: 'TMDB Timestamp'
-              description: 'Digital release date (streaming/download, type 4) for country {$TMDB.COUNTRY} as a Unix timestamp. Returns 0 if no digital release date is listed on TMDB for the configured country.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -682,9 +707,9 @@ zabbix_export:
               delay: '0'
               value_type: FLOAT
               units: unixtime
+              description: 'Physical release date (DVD/Blu-ray, type 5) for country {$TMDB.COUNTRY} as a Unix timestamp. Returns 0 if no physical release date is listed on TMDB for the configured country.'
               valuemap:
                 name: 'TMDB Timestamp'
-              description: 'Physical release date (DVD/Blu-ray, type 5) for country {$TMDB.COUNTRY} as a Unix timestamp. Returns 0 if no physical release date is listed on TMDB for the configured country.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -715,6 +740,63 @@ zabbix_export:
                   opdata: '{ITEM.LASTVALUE1}'
                   priority: INFO
                   description: 'A physical release date (DVD/Blu-ray) has been set or updated for this movie.'
+                  manual_close: 'YES'
+            - uuid: fddfaf3debdb4dd2af2065a5e4c40a26
+              name: 'TMDB: {#MOVIE_NAME} raw'
+              type: HTTP_AGENT
+              key: 'tmdb.movie.raw[{#MOVIE_ID}]'
+              delay: 30m
+              history: '0'
+              value_type: TEXT
+              trends: '0'
+              description: 'Fetches full movie details from TMDB API including release date and status. Master item for all dependent movie metrics.'
+              url: 'https://api.themoviedb.org/3/movie/{#MOVIE_ID}?api_key={$TMDB.API_KEY}&language=de-DE&append_to_response=release_dates'
+              output_format: JSON
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: movie
+                  value: '{#MOVIE_NAME}'
+            - uuid: 5349ebd4c1474f06a6c2e24a8db9352c
+              name: 'TMDB: {#MOVIE_NAME} release date'
+              type: DEPENDENT
+              key: 'tmdb.movie.release_date[{#MOVIE_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              units: unixtime
+              description: 'Release date of the movie as a Unix timestamp. Returns 0 if no release date is available on TMDB (displays as 1970-01-01, use the trigger to detect date changes instead of watching the raw value).'
+              valuemap:
+                name: 'TMDB Timestamp'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.body.release_date
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      if (!value || value === '0') return 0;
+                      var d = new Date(value + 'T00:00:00Z');
+                      return Math.floor(d.getTime() / 1000);
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'tmdb.movie.raw[{#MOVIE_ID}]'
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: movie
+                  value: '{#MOVIE_NAME}'
+              trigger_prototypes:
+                - uuid: 05367e4c24f44c8ba23e484abc4bb9aa
+                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.release_date[{#MOVIE_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.movie.release_date[{#MOVIE_ID}])>0'
+                  name: 'TMDB: {#MOVIE_NAME} release date announced or changed'
+                  event_name: 'TMDB: {#MOVIE_NAME} release date: {ITEM.LASTVALUE1}'
+                  opdata: '{ITEM.LASTVALUE1}'
+                  priority: INFO
+                  description: 'A release date has been set or updated for this movie. Fires only when the new value is a valid date (not 0).'
                   manual_close: 'YES'
             - uuid: 96edbdcb8cff4e2fb6864b4b00e4f2c7
               name: 'TMDB: {#MOVIE_NAME} runtime'
@@ -748,64 +830,6 @@ zabbix_export:
                   opdata: '{ITEM.LASTVALUE1} min'
                   priority: INFO
                   description: 'The movie runtime has been set or changed on TMDB.'
-                  manual_close: 'YES'
-
-            - uuid: fddfaf3debdb4dd2af2065a5e4c40a26
-              name: 'TMDB: {#MOVIE_NAME} raw'
-              type: HTTP_AGENT
-              key: 'tmdb.movie.raw[{#MOVIE_ID}]'
-              delay: 30m
-              history: '0'
-              value_type: TEXT
-              trends: '0'
-              description: 'Fetches full movie details from TMDB API including release date and status. Master item for all dependent movie metrics.'
-              url: 'https://api.themoviedb.org/3/movie/{#MOVIE_ID}?api_key={$TMDB.API_KEY}&language=de-DE&append_to_response=release_dates'
-              output_format: JSON
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: movie
-                  value: '{#MOVIE_NAME}'
-            - uuid: 5349ebd4c1474f06a6c2e24a8db9352c
-              name: 'TMDB: {#MOVIE_NAME} release date'
-              type: DEPENDENT
-              key: 'tmdb.movie.release_date[{#MOVIE_ID}]'
-              delay: '0'
-              value_type: FLOAT
-              units: unixtime
-              valuemap:
-                name: 'TMDB Timestamp'
-              description: 'Release date of the movie as a Unix timestamp. Returns 0 if no release date is available on TMDB (displays as 1970-01-01, use the trigger to detect date changes instead of watching the raw value).'
-              preprocessing:
-                - type: JSONPATH
-                  parameters:
-                    - $.body.release_date
-                  error_handler: CUSTOM_VALUE
-                  error_handler_params: '0'
-                - type: JAVASCRIPT
-                  parameters:
-                    - |
-                      if (!value || value === '0') return 0;
-                      var d = new Date(value + 'T00:00:00Z');
-                      return Math.floor(d.getTime() / 1000);
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1d
-              master_item:
-                key: 'tmdb.movie.raw[{#MOVIE_ID}]'
-              tags:
-                - tag: component
-                  value: tmdb
-                - tag: movie
-                  value: '{#MOVIE_NAME}'
-              trigger_prototypes:
-                - uuid: 05367e4c24f44c8ba23e484abc4bb9aa
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.release_date[{#MOVIE_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.movie.release_date[{#MOVIE_ID}])>0'
-                  name: 'TMDB: {#MOVIE_NAME} release date announced or changed'
-                  event_name: 'TMDB: {#MOVIE_NAME} release date: {ITEM.LASTVALUE1}'
-                  opdata: '{ITEM.LASTVALUE1}'
-                  priority: INFO
-                  description: 'A release date has been set or updated for this movie. Fires only when the new value is a valid date (not 0).'
                   manual_close: 'YES'
             - uuid: 11a1b68ae775402b9a87d65225285a6b
               name: 'TMDB: {#MOVIE_NAME} status'
@@ -844,6 +868,27 @@ zabbix_export:
                   priority: INFO
                   description: 'The movie status on TMDB has changed to Released.'
                   manual_close: 'YES'
+            - uuid: d22b76b14a914d318a711c5e8a5ae1c4
+              name: 'TMDB: {#MOVIE_NAME} vote average'
+              type: DEPENDENT
+              key: 'tmdb.movie.vote_average[{#MOVIE_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'Current TMDB user rating (0-10). Informational only, no trigger.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.body.vote_average
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'tmdb.movie.raw[{#MOVIE_ID}]'
+              tags:
+                - tag: component
+                  value: tmdb
+                - tag: movie
+                  value: '{#MOVIE_NAME}'
           master_item:
             key: tmdb.watchlist.movies.raw
           lld_macro_paths:
@@ -962,11 +1007,6 @@ zabbix_export:
                       name: show.2
                       value: '2'
       valuemaps:
-        - uuid: 8a3408ec47c64fb3baa4ec49c2b9ecda
-          name: 'TMDB Timestamp'
-          mappings:
-            - value: '0'
-              newvalue: 'Not announced'
         - uuid: a63197781c254039943e31395e650515
           name: 'TMDB Days Until Release'
           mappings:
@@ -981,3 +1021,8 @@ zabbix_export:
               newvalue: 'In production'
             - type: DEFAULT
               newvalue: Unknown
+        - uuid: 8a3408ec47c64fb3baa4ec49c2b9ecda
+          name: 'TMDB Timestamp'
+          mappings:
+            - value: '0'
+              newvalue: 'Not announced'
