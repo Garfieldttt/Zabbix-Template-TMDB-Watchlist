@@ -238,8 +238,6 @@ zabbix_export:
                 - uuid: d87d054916d9457d9361036bf60553f6
                   expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}])>0'
                   name: 'TMDB: {#SERIES_NAME} new episode aired'
-                  event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_number[{#SERIES_ID}])} aired on {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.last_air_date[{#SERIES_ID}]))}'
-                  opdata: 'S{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_number[{#SERIES_ID}])}: {ITEM.LASTVALUE1}'
                   priority: INFO
                   description: 'A new episode has aired. The last_air_date has changed to a newer value.'
                   manual_close: 'YES'
@@ -321,15 +319,6 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
-              trigger_prototypes:
-                - uuid: b1ce24ad5df14a9494acbc483403b3ec
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}])>0'
-                  name: 'TMDB: {#SERIES_NAME} next episode date changed'
-                  event_name: 'TMDB: {#SERIES_NAME} S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])} on {?strftime("%Y-%m-%d",last(/TMDB Watchlist by HTTP/tmdb.series.next_episode[{#SERIES_ID}]))}'
-                  opdata: 'S{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_season[{#SERIES_ID}])}E{?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_number[{#SERIES_ID}])}: {ITEM.LASTVALUE1}'
-                  priority: INFO
-                  description: 'The next episode air date has been set or updated. Fires only when the new value is a valid date (not 0).'
-                  manual_close: 'YES'
             - uuid: 379cea8e8ce44ba386cae592721d2ed8
               name: 'TMDB: {#SERIES_NAME} next episode number'
               type: DEPENDENT
@@ -483,7 +472,6 @@ zabbix_export:
             - uuid: 24b1a6c99e75424499b765034002a9df
               expression: 'last(/TMDB Watchlist by HTTP/tmdb.series.days_since_last_air[{#SERIES_ID}])>{$TMDB.SERIES.STALE_DAYS} and last(/TMDB Watchlist by HTTP/tmdb.series.in_production[{#SERIES_ID}])=1'
               name: 'TMDB: {#SERIES_NAME} no new episode for {$TMDB.SERIES.STALE_DAYS} days (in production)'
-              event_name: 'TMDB: {#SERIES_NAME} stale, in production, no new episode for {$TMDB.SERIES.STALE_DAYS}+ days'
               opdata: '{ITEM.LASTVALUE1} days without new episode'
               priority: WARNING
               description: 'The series is marked as in production but no new episode has aired in {$TMDB.SERIES.STALE_DAYS} days.'
