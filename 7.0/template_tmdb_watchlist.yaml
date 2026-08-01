@@ -23,15 +23,6 @@ zabbix_export:
           tags:
             - tag: component
               value: tmdb
-          triggers:
-            - uuid: 229233594a494ebbbdf6750a1b2c87ac
-              expression: 'change(/TMDB Watchlist by HTTP/tmdb.watchlist.count)<>0'
-              name: 'TMDB: Series watchlist changed'
-              event_name: 'TMDB: Series watchlist changed – now {ITEM.LASTVALUE1} entries'
-              opdata: '{ITEM.LASTVALUE1} entries'
-              priority: INFO
-              description: 'The number of TV series on the watchlist has changed. A series has been added or removed.'
-              manual_close: 'YES'
         - uuid: 805bbc53f3234b9485a1ba7221b60e3a
           name: 'TMDB: Watchlist movies count'
           type: DEPENDENT
@@ -47,15 +38,6 @@ zabbix_export:
           tags:
             - tag: component
               value: tmdb
-          triggers:
-            - uuid: 4254c5aa1e7646e9a053593254611048
-              expression: 'change(/TMDB Watchlist by HTTP/tmdb.watchlist.movies.count)<>0'
-              name: 'TMDB: Movie watchlist changed'
-              event_name: 'TMDB: Movie watchlist changed – now {ITEM.LASTVALUE1} entries'
-              opdata: '{ITEM.LASTVALUE1} entries'
-              priority: INFO
-              description: 'The number of movies on the watchlist has changed. A movie has been added or removed.'
-              manual_close: 'YES'
         - uuid: 8e0b1c66909e43839abc28f4f3377862
           name: 'TMDB: Watchlist movies total pages'
           type: DEPENDENT
@@ -179,14 +161,6 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
-              trigger_prototypes:
-                - uuid: e09d13f0214c4b78af5dd263455f9da5
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.in_production[{#SERIES_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.series.in_production[{#SERIES_ID}])=1'
-                  name: 'TMDB: {#SERIES_NAME} production started'
-                  event_name: 'TMDB: {#SERIES_NAME} is now in production'
-                  priority: INFO
-                  description: 'The series has transitioned to in_production=true. A new season or continuation is actively being produced.'
-                  manual_close: 'YES'
             - uuid: b906afc17bf24e55853abe12aca3d757
               name: 'TMDB: {#SERIES_NAME} last air date'
               type: DEPENDENT
@@ -247,15 +221,6 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
-              trigger_prototypes:
-                - uuid: d87d054916d9457d9361036bf60553f6
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.last_episode_info[{#SERIES_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.series.last_episode_info[{#SERIES_ID}])<>"No episode aired yet"'
-                  name: 'TMDB: {#SERIES_NAME} new episode aired'
-                  event_name: 'TMDB: {#SERIES_NAME} – new episode {ITEM.LASTVALUE1}'
-                  opdata: '{ITEM.LASTVALUE1}'
-                  priority: INFO
-                  description: 'A new episode has aired. Shows season/episode number, episode title and air date.'
-                  manual_close: 'YES'
             - uuid: bbabc15acc5749758368b0cc12061bc8
               name: 'TMDB: {#SERIES_NAME} next episode air date'
               type: DEPENDENT
@@ -316,15 +281,6 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
-              trigger_prototypes:
-                - uuid: b1ce24ad5df14a9494acbc483403b3ec
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.next_episode_info[{#SERIES_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_info[{#SERIES_ID}])<>"Not announced"'
-                  name: 'TMDB: {#SERIES_NAME} next episode announced or changed'
-                  event_name: 'TMDB: {#SERIES_NAME} – next episode {ITEM.LASTVALUE1}'
-                  opdata: '{ITEM.LASTVALUE1}'
-                  priority: INFO
-                  description: 'The next episode has been announced or its details (air date, title) have changed. Shows season/episode number, episode title and air date.'
-                  manual_close: 'YES'
             - uuid: 5735608341eb442795f9a05909cbd5c1
               name: 'TMDB: {#SERIES_NAME} episode count'
               type: DEPENDENT
@@ -348,12 +304,12 @@ zabbix_export:
                   value: '{#SERIES_NAME}'
               trigger_prototypes:
                 - uuid: 47438ad60b0b480092eb42489958174b
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.episode_count[{#SERIES_ID}])>=1'
+                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.episode_count[{#SERIES_ID}])>=1 or length(last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_info[{#SERIES_ID}]))<0'
                   name: 'TMDB: {#SERIES_NAME} new episode added'
-                  event_name: 'TMDB: {#SERIES_NAME} episode added – next episode: {?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_info[{#SERIES_ID}])}'
+                  event_name: 'TMDB: {#SERIES_NAME} episode added – next episode: {ITEM.LASTVALUE2}'
                   opdata: '{ITEM.LASTVALUE1} episodes total'
                   priority: INFO
-                  description: 'The total episode count has increased. A new episode has been added to TMDB.'
+                  description: 'The total episode count has increased. A new episode has been added to TMDB. The second expression term is always false and never affects when the trigger fires. It exists only to make next_episode_info the second item of the expression, so {ITEM.LASTVALUE2} can show its text value in the event name. Expression macros cannot resolve text items and would render as *UNKNOWN*.'
                   manual_close: 'YES'
             - uuid: 410edaa153544650ac49ad8556b9134b
               name: 'TMDB: {#SERIES_NAME} vote average'
@@ -407,15 +363,6 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
-              trigger_prototypes:
-                - uuid: b60052fb36a04da7b1b3e4bea8850c0b
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.providers[{#SERIES_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.series.providers[{#SERIES_ID}])<>"Not streaming"'
-                  name: 'TMDB: {#SERIES_NAME} now available for streaming'
-                  event_name: 'TMDB: {#SERIES_NAME} streaming: {ITEM.LASTVALUE1}'
-                  opdata: '{ITEM.LASTVALUE1}'
-                  priority: WARNING
-                  description: 'The series is now available on a flatrate streaming provider in {$TMDB.COUNTRY}, or the provider list has changed.'
-                  manual_close: 'YES'
             - uuid: 6c253cddf4b1409396e711926d6c2ee0
               name: 'TMDB: {#SERIES_NAME} raw'
               type: HTTP_AGENT
@@ -454,12 +401,12 @@ zabbix_export:
                   value: '{#SERIES_NAME}'
               trigger_prototypes:
                 - uuid: 92b458cf6e1d40bea73113cedb3fba14
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.seasons[{#SERIES_ID}])>={$TMDB.SEASON.NEW_TRIGGER}'
+                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.seasons[{#SERIES_ID}])>={$TMDB.SEASON.NEW_TRIGGER} or length(last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_info[{#SERIES_ID}]))<0'
                   name: 'TMDB: {#SERIES_NAME} new season announced'
-                  event_name: 'TMDB: {#SERIES_NAME} – {ITEM.LASTVALUE1} seasons now, next episode: {?last(/TMDB Watchlist by HTTP/tmdb.series.next_episode_info[{#SERIES_ID}])}'
+                  event_name: 'TMDB: {#SERIES_NAME} – {ITEM.LASTVALUE1} seasons now, next episode: {ITEM.LASTVALUE2}'
                   opdata: '{ITEM.LASTVALUE1} seasons'
                   priority: INFO
-                  description: 'The season count for this series has increased by at least {$TMDB.SEASON.NEW_TRIGGER}. A new season has been announced on TMDB.'
+                  description: 'The season count for this series has increased by at least {$TMDB.SEASON.NEW_TRIGGER}. A new season has been announced on TMDB. The second expression term is always false and never affects when the trigger fires. It exists only to make next_episode_info the second item of the expression, so {ITEM.LASTVALUE2} can show its text value in the event name.'
                   manual_close: 'YES'
             - uuid: e49d2ef65ccb40729f7c630ea959f175
               name: 'TMDB: {#SERIES_NAME} status'
@@ -498,15 +445,6 @@ zabbix_export:
                   priority: WARNING
                   description: 'The series status on TMDB has changed to Ended.'
                   manual_close: 'YES'
-          trigger_prototypes:
-            - uuid: 24b1a6c99e75424499b765034002a9df
-              expression: 'last(/TMDB Watchlist by HTTP/tmdb.series.days_since_last_air[{#SERIES_ID}])>{$TMDB.SERIES.STALE_DAYS} and last(/TMDB Watchlist by HTTP/tmdb.series.in_production[{#SERIES_ID}])=1'
-              name: 'TMDB: {#SERIES_NAME} no new episode for {$TMDB.SERIES.STALE_DAYS} days (in production)'
-              event_name: 'TMDB: {#SERIES_NAME} stale, in production, no new episode for {$TMDB.SERIES.STALE_DAYS}+ days'
-              opdata: '{ITEM.LASTVALUE1} without a new episode'
-              priority: WARNING
-              description: 'The series is marked as in production but no new episode has aired in {$TMDB.SERIES.STALE_DAYS} days.'
-              manual_close: 'YES'
           master_item:
             key: tmdb.watchlist.raw
           lld_macro_paths:
@@ -559,12 +497,12 @@ zabbix_export:
                   value: '{#MOVIE_NAME}'
               trigger_prototypes:
                 - uuid: f666011744a642299ddeb7be8295988b
-                  expression: 'last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_digital_release[{#MOVIE_ID}])>=0 and last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_digital_release[{#MOVIE_ID}])<={$TMDB.DIGITAL.SOON_DAYS}'
+                  expression: 'last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_digital_release[{#MOVIE_ID}])>=0 and last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_digital_release[{#MOVIE_ID}])<={$TMDB.DIGITAL.SOON_DAYS} or length(last(/TMDB Watchlist by HTTP/tmdb.movie.digital_release_date[{#MOVIE_ID}]))<0'
                   name: 'TMDB: {#MOVIE_NAME} digital release in {$TMDB.DIGITAL.SOON_DAYS} days or less'
-                  event_name: 'TMDB: {#MOVIE_NAME} digital release in {ITEM.LASTVALUE1} ({?last(/TMDB Watchlist by HTTP/tmdb.movie.digital_release_date[{#MOVIE_ID}])})'
+                  event_name: 'TMDB: {#MOVIE_NAME} digital release in {ITEM.LASTVALUE1} ({ITEM.LASTVALUE2})'
                   opdata: '{ITEM.LASTVALUE1}'
                   priority: WARNING
-                  description: 'The digital release date is within {$TMDB.DIGITAL.SOON_DAYS} days. Resolves automatically once the release date has passed.'
+                  description: 'The digital release date is within {$TMDB.DIGITAL.SOON_DAYS} days. Resolves automatically once the release date has passed. The trailing expression term is always false and never affects when the trigger fires. It exists only to make digital_release_date the second item of the expression, so {ITEM.LASTVALUE2} can show the date in the event name.'
                   manual_close: 'YES'
             - uuid: 834c3e4410064447ae2a0ae020499a62
               name: 'TMDB: {#MOVIE_NAME} days until release'
@@ -600,12 +538,12 @@ zabbix_export:
                   value: '{#MOVIE_NAME}'
               trigger_prototypes:
                 - uuid: 1b9d0fa9b22a44bd9c9347838eb78d01
-                  expression: 'last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_release[{#MOVIE_ID}])>=0 and last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_release[{#MOVIE_ID}])<={$TMDB.MOVIE.SOON_DAYS}'
+                  expression: 'last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_release[{#MOVIE_ID}])>=0 and last(/TMDB Watchlist by HTTP/tmdb.movie.days_until_release[{#MOVIE_ID}])<={$TMDB.MOVIE.SOON_DAYS} or length(last(/TMDB Watchlist by HTTP/tmdb.movie.release_date[{#MOVIE_ID}]))<0'
                   name: 'TMDB: {#MOVIE_NAME} releases in {$TMDB.MOVIE.SOON_DAYS} days or less'
-                  event_name: 'TMDB: {#MOVIE_NAME} releases in {ITEM.LASTVALUE1} ({?last(/TMDB Watchlist by HTTP/tmdb.movie.release_date[{#MOVIE_ID}])})'
+                  event_name: 'TMDB: {#MOVIE_NAME} releases in {ITEM.LASTVALUE1} ({ITEM.LASTVALUE2})'
                   opdata: '{ITEM.LASTVALUE1}'
                   priority: AVERAGE
-                  description: 'The movie release date is within {$TMDB.MOVIE.SOON_DAYS} days. Resolves automatically once the release date has passed.'
+                  description: 'The movie release date is within {$TMDB.MOVIE.SOON_DAYS} days. Resolves automatically once the release date has passed. The trailing expression term is always false and never affects when the trigger fires. It exists only to make release_date the second item of the expression, so {ITEM.LASTVALUE2} can show the date in the event name.'
                   manual_close: 'YES'
             - uuid: e9b816a7d70043acb8b0daafcd95d43c
               name: 'TMDB: {#MOVIE_NAME} digital release date'
@@ -676,14 +614,6 @@ zabbix_export:
                   value: tmdb
                 - tag: movie
                   value: '{#MOVIE_NAME}'
-              trigger_prototypes:
-                - uuid: 6cc13d8ea9884d2ba45bce00fed0f109
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.in_production[{#MOVIE_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.movie.in_production[{#MOVIE_ID}])=1'
-                  name: 'TMDB: {#MOVIE_NAME} production started'
-                  event_name: 'TMDB: {#MOVIE_NAME} is now in production'
-                  priority: INFO
-                  description: 'The movie has transitioned to in_production=true.'
-                  manual_close: 'YES'
             - uuid: d822a58b119f4ca588e2af110ffdd692
               name: 'TMDB: {#MOVIE_NAME} physical release date'
               type: DEPENDENT
@@ -746,15 +676,6 @@ zabbix_export:
                   value: tmdb
                 - tag: movie
                   value: '{#MOVIE_NAME}'
-              trigger_prototypes:
-                - uuid: 413480b8956a4710889f5c3b868bc120
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.runtime[{#MOVIE_ID}])<>0 and last(/TMDB Watchlist by HTTP/tmdb.movie.runtime[{#MOVIE_ID}])>0'
-                  name: 'TMDB: {#MOVIE_NAME} runtime set'
-                  event_name: 'TMDB: {#MOVIE_NAME} runtime: {ITEM.LASTVALUE1}'
-                  opdata: '{ITEM.LASTVALUE1}'
-                  priority: INFO
-                  description: 'The movie runtime has been set or changed on TMDB.'
-                  manual_close: 'YES'
             - uuid: d22b76b14a914d318a711c5e8a5ae1c4
               name: 'TMDB: {#MOVIE_NAME} vote average'
               type: DEPENDENT
@@ -807,15 +728,6 @@ zabbix_export:
                   value: tmdb
                 - tag: movie
                   value: '{#MOVIE_NAME}'
-              trigger_prototypes:
-                - uuid: 4ee985e862cd4e8e905d9053f7968714
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.providers[{#MOVIE_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.movie.providers[{#MOVIE_ID}])<>"Not streaming"'
-                  name: 'TMDB: {#MOVIE_NAME} now available for streaming'
-                  event_name: 'TMDB: {#MOVIE_NAME} streaming: {ITEM.LASTVALUE1}'
-                  opdata: '{ITEM.LASTVALUE1}'
-                  priority: WARNING
-                  description: 'The movie is now available on a flatrate streaming provider in {$TMDB.COUNTRY}, or the provider list has changed.'
-                  manual_close: 'YES'
             - uuid: fddfaf3debdb4dd2af2065a5e4c40a26
               name: 'TMDB: {#MOVIE_NAME} raw'
               type: HTTP_AGENT
@@ -935,9 +847,6 @@ zabbix_export:
         - macro: '{$TMDB.SEASON.NEW_TRIGGER}'
           value: '1'
           description: 'Minimum increase in season count to trigger alert'
-        - macro: '{$TMDB.SERIES.STALE_DAYS}'
-          value: '180'
-          description: 'Days since last air date before a series is considered stale (only fires when in_production=1)'
         - macro: '{$TMDB.SESSION_ID}'
           description: 'TMDB Session ID (generate once via authentication flow)'
       dashboards:
