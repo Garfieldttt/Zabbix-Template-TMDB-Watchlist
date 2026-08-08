@@ -363,6 +363,15 @@ zabbix_export:
                   value: tmdb
                 - tag: series
                   value: '{#SERIES_NAME}'
+              trigger_prototypes:
+                - uuid: 347b4c97c40d43cc836536010644955d
+                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.series.providers[{#SERIES_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.series.providers[{#SERIES_ID}])<>"Not streaming"'
+                  name: 'TMDB: {#SERIES_NAME} available on streaming'
+                  event_name: 'TMDB: {#SERIES_NAME} is streaming on {ITEM.LASTVALUE1}'
+                  opdata: '{ITEM.LASTVALUE1}'
+                  priority: INFO
+                  description: 'The flatrate streaming provider list for country {$TMDB.COUNTRY} has changed and is no longer empty. The series can now be watched on the listed provider. Also fires when an additional provider is added.'
+                  manual_close: 'YES'
             - uuid: 6c253cddf4b1409396e711926d6c2ee0
               name: 'TMDB: {#SERIES_NAME} raw'
               type: HTTP_AGENT
@@ -728,6 +737,15 @@ zabbix_export:
                   value: tmdb
                 - tag: movie
                   value: '{#MOVIE_NAME}'
+              trigger_prototypes:
+                - uuid: 8c87e762c38d480ca6137573ac24d5f8
+                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.providers[{#MOVIE_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.movie.providers[{#MOVIE_ID}])<>"Not streaming"'
+                  name: 'TMDB: {#MOVIE_NAME} available on streaming'
+                  event_name: 'TMDB: {#MOVIE_NAME} is streaming on {ITEM.LASTVALUE1}'
+                  opdata: '{ITEM.LASTVALUE1}'
+                  priority: INFO
+                  description: 'The flatrate streaming provider list for country {$TMDB.COUNTRY} has changed and is no longer empty. The movie can now be watched on the listed provider. Also fires when an additional provider is added.'
+                  manual_close: 'YES'
             - uuid: fddfaf3debdb4dd2af2065a5e4c40a26
               name: 'TMDB: {#MOVIE_NAME} raw'
               type: HTTP_AGENT
@@ -811,13 +829,6 @@ zabbix_export:
                   event_name: 'TMDB: {#MOVIE_NAME} status: Canceled'
                   priority: WARNING
                   description: 'The movie status on TMDB has changed to Canceled.'
-                  manual_close: 'YES'
-                - uuid: 87a55f7d7a9242d288d45e3ff553957e
-                  expression: 'change(/TMDB Watchlist by HTTP/tmdb.movie.status[{#MOVIE_ID}])=1 and last(/TMDB Watchlist by HTTP/tmdb.movie.status[{#MOVIE_ID}])="Released"'
-                  name: 'TMDB: {#MOVIE_NAME} released'
-                  event_name: 'TMDB: {#MOVIE_NAME} is now Released'
-                  priority: INFO
-                  description: 'The movie status on TMDB has changed to Released.'
                   manual_close: 'YES'
           master_item:
             key: tmdb.watchlist.movies.raw
